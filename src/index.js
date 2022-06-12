@@ -3,7 +3,7 @@ const http = require('http');
 const express = require('express');
 const port = process.env.PORT;
 const sockerio = require('socket.io');
-const Filter = require('bad-words')
+const Bad_words = require('bad-words')
 
 const publicpath = path.join(__dirname, '../public');
 
@@ -17,24 +17,28 @@ welcomeMsg = 'Welcome!!!';
 
 io.on('connection', (socket) => {
 	console.log('sockert eun');
-
+    
 	socket.emit('welcome', welcomeMsg);
 	socket.broadcast.emit('welcome', 'A new user joined');
-
+    
 	socket.on('sendMsg', (message, callback) => {
+        const filter = new Bad_words()
+        if (filter.isProfane(message)){
+            return callback('Bad words used')
+        }
 		io.emit('MsgRecieved', message);
-		callback();
+		callback("Delivered!");
 	});
 
 	socket.on('disconnect', () => {
 		io.emit('welcome', 'a user left');
 	});
 
-	socket.on('sendLocation', (location) => {
+	socket.on('sendLocation', (location, callback) => {
 		io.emit(
-			'welcome',
-			`https://google.com/maps?q=${location.lat},${location.long}`
+			'locationMsg', location
 		);
+        callback("Location Sent!!")
 	});
 });
 
