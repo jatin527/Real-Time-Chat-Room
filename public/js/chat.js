@@ -37,17 +37,24 @@ $location.addEventListener('click', () => {
 	});
 });
 
-socket.on('welcome', (welcomeMsg) => {
-	console.log(welcomeMsg);
-});
-socket.on('MsgRecieved', (Msg) => {
+// socket.on('message', (welcomeMsg) => {
+// 	console.log(welcomeMsg);
+// });
+
+socket.on('message', (Msg) => {
 	console.log(Msg);
-	const html = Mustache.render(messagetemplate, { message: Msg });
+	const html = Mustache.render(messagetemplate, {
+		message: Msg.text,
+		createdAt: moment(Msg.createdAt).format('HH:mm'),
+	});
 	$messages.insertAdjacentHTML('beforeend', html);
 });
 
 socket.on('locationMsg', (location) => {
-	const html = Mustache.render(locationtemplate, { location });
+	const html = Mustache.render(locationtemplate, {
+		location: location.url,
+		createdAt: moment(location.createdAt).format('HH:mm'),
+	});
 	$messages.insertAdjacentHTML('beforeend', html);
 	console.log(location);
 });

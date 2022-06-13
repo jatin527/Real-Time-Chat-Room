@@ -4,28 +4,42 @@
 		<meta charset="UTF-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Chat app</title>
+		<link rel="icon" href="/img/favicon.png" />
+		<link rel="stylesheet" href="/css/styles.css" />
+		<title>Chat Room</title>
 	</head>
 	<body>
-		<h1>Chat app</h1>
+		<div class="chat">
+			<div class="chat__sidebar"></div>
+			<div class="chat__main">
+				<div id="messages"></div>
 
-		<div id="messages"></div>
-
-		<form action="sendMsg" id="message-form">
-			<input id="message" type="text" placeholder="Enter Message" />
-			<button type="submit">Send</button>
-		</form>
-		<br />
-		<button id="send-location">Send Location</button>
+				<form action="sendMsg" id="message-form">
+					<input
+						id="message"
+						type="text"
+						placeholder="Enter Message"
+					/>
+					<button type="submit">Send</button>
+				</form>
+				<br />
+				<button id="send-location">Send Location</button>
+			</div>
+		</div>
 
 		<script id="message-template" type="text/html">
 			<div>
-				<p>{{ message }}</p>
+				<p>{{ createdAt }} - {{ message }}</p>
 			</div>
 		</script>
 		<script id="location-template" type="text/html">
 			<div>
-				<a href="{{location}}" target="_blank">My Current location</a>
+				<p>
+					{{ createdAt }} -
+					<a href="{{location}}" target="_blank"
+						>My Current location</a
+					>
+				</p>
 			</div>
 		</script>
 
