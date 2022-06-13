@@ -5,7 +5,13 @@ const port = process.env.PORT;
 const sockerio = require('socket.io');
 const Bad_words = require('bad-words');
 
-const { generateMsg, generateLocationMsg } = require('./utils/messages')
+const { generateMsg, generateLocationMsg } = require('./utils/messages');
+const {
+	addUser,
+	removeUser,
+	getUser,
+	getUsersInRoom,
+} = require('./utils/users');
 
 const publicpath = path.join(__dirname, '../public');
 
@@ -18,24 +24,66 @@ app.use(express.static(publicpath));
 io.on('connection', (socket) => {
 	console.log('socket run');
 
-	socket.emit('message', generateMsg("Welcome!!"));
-	socket.broadcast.emit('message', generateMsg('A new user joined'));
+	socket.on('join', (options, callback) => {
+		const { error, user } = addUser({ id: socket.id, ...options });
+		if (error) {
+			return callback(error);
+		}
+		socket.join(user.room);
+		socket.emit(
+			'message',
+			generateMsg('Admin', `Welcome ${user.username}!!`)
+		);
+		socket.broadcast
+			.to(user.room)
+			.emit(
+				'message',
+				generateMsg('Admin', `${user.username} has joined`)
+			);
+
+		io.to(user.room).emit('roomdata', {
+			room: user.room,
+			users: getUsersInRoom(user.room),
+		});
+	});
 
 	socket.on('sendMsg', (message, callback) => {
 		const filter = new Bad_words();
 		if (filter.isProfane(message)) {
 			return callback('Bad words used');
 		}
-		io.emit('message', generateMsg(message));
-		callback('Delivered!');
+		const user = getUser(socket.id);
+
+		if (user) {
+			io.to(user.room).emit(
+				'message',
+				generateMsg(user.username, message)
+			);
+			callback('Delivered!');
+		}
 	});
 
 	socket.on('disconnect', () => {
-		io.emit('message', generateMsg('a user left'));
+		const user = removeUser(socket.id);
+		if (user) {
+			io.to(user.room).emit(
+				'message',
+				generateMsg('Admin', `${user.username} left`)
+			);
+			io.to(user.room).emit('roomdata', {
+				room: user.room,
+				users: getUsersInRoom(user.room),
+			});
+		}
 	});
 
 	socket.on('sendLocation', (location, callback) => {
-		io.emit('locationMsg', generateLocationMsg(location));
+		const user = getUser(socket.id);
+
+		io.to(user.room).emit(
+			'locationMsg',
+			generateLocationMsg(user.username, location)
+		);
 		callback('Location Sent!!');
 	});
 });

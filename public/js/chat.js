@@ -9,6 +9,12 @@ const $messages = document.getElementById('messages');
 //* Templates
 const messagetemplate = document.getElementById('message-template').innerHTML;
 const locationtemplate = document.getElementById('location-template').innerHTML;
+const sidebartemplate = document.getElementById('sidebar-template').innerHTML;
+
+// * Options
+const { username, room } = Qs.parse(location.search, {
+	ignoreQueryPrefix: true,
+});
 
 $messageForm.addEventListener('submit', (e) => {
 	e.preventDefault();
@@ -37,24 +43,57 @@ $location.addEventListener('click', () => {
 	});
 });
 
-// socket.on('message', (welcomeMsg) => {
-// 	console.log(welcomeMsg);
-// });
+socket.on('roomdata', ({ room, users }) => {
+	const html = Mustache.render(sidebartemplate, {
+		users,
+		room,
+	});
+	document.getElementById('sidebar').innerHTML = html;
+});
+
+const autoScroll = () => {
+    const $newMessage = $messages.lastElementChild
+
+    const newmsgStyle = getComputedStyle($newMessage)
+    const newmsgmargin  = parseInt(newmsgStyle.marginBottom)
+    const newMsgHeight = newmsgmargin + $newMessage.offsetHeight
+
+    const visibleHeight = $messages.offsetHeight
+
+    const containerHeight = $messages.scrollHeight
+
+    const scrollOffset = $messages.scrollTop + visibleHeight
+
+    if (containerHeight - newMsgHeight <= scrollOffset){
+        $messages.scrollTop = $messages.scrollHeight
+    }
+};
 
 socket.on('message', (Msg) => {
 	console.log(Msg);
 	const html = Mustache.render(messagetemplate, {
+		username: Msg.username,
 		message: Msg.text,
 		createdAt: moment(Msg.createdAt).format('HH:mm'),
 	});
 	$messages.insertAdjacentHTML('beforeend', html);
+	autoScroll();
 });
 
 socket.on('locationMsg', (location) => {
 	const html = Mustache.render(locationtemplate, {
+		username: location.username,
 		location: location.url,
 		createdAt: moment(location.createdAt).format('HH:mm'),
 	});
 	$messages.insertAdjacentHTML('beforeend', html);
 	console.log(location);
+	autoScroll();
+});
+
+socket.emit('join', { username, room }, (error) => {
+	if (error) {
+		alert(error);
+		location.href = '/';
+	}
 });
